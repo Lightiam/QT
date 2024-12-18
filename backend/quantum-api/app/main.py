@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from .models import (
     ExecutionRequest, ExecutionResult, ProviderType,
     ChatMessage, ChatSession, QuantumCircuit
@@ -147,3 +149,16 @@ async def add_chat_message(
         return message
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/{full_path:path}")
+async def serve_frontend(full_path: str):
+    """Serve frontend static files and handle client-side routing."""
+    # First check if the path exists in static directory
+    static_file = f"static/{full_path}"
+    if os.path.isfile(static_file):
+        return FileResponse(static_file)
+    # Otherwise return index.html for client-side routing
+    return FileResponse("static/index.html")
