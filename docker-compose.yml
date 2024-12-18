@@ -1,0 +1,41 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend/quantum-api
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - IBM_QUANTUM_TOKEN=${IBM_QUANTUM_TOKEN}
+      - RIGETTI_API_KEY=${RIGETTI_API_KEY}
+      - GOOGLE_QUANTUM_CREDENTIALS=${GOOGLE_QUANTUM_CREDENTIALS}
+      - MICROSOFT_QUANTUM_WORKSPACE=${MICROSOFT_QUANTUM_WORKSPACE}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY}
+    volumes:
+      - ./backend/quantum-api:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./quantum-ide
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./quantum-ide:/app
+      - /app/node_modules
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3

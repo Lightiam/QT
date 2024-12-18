@@ -1,0 +1,42 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: ./backend/api
+      dockerfile: ../../infrastructure/docker/Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/quantum_platform
+    depends_on:
+      - db
+
+  vcs:
+    build:
+      context: ./backend/vcs
+      dockerfile: ../../infrastructure/docker/Dockerfile
+    ports:
+      - "8001:8001"
+
+  frontend:
+    build:
+      context: ./frontend/ide
+      dockerfile: ../../infrastructure/docker/Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+      - vcs
+
+  db:
+    image: postgres:14
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=quantum_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
