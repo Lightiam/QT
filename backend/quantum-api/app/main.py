@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from .models import (
     ExecutionRequest, ExecutionResult, ProviderType,
     ChatMessage, ChatSession, QuantumCircuit
@@ -30,6 +32,16 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Serve index.html for client-side routing
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404)
+    return FileResponse("static/index.html")
 
 # Initialize providers
 ibm_provider = IBMQuantumProvider()

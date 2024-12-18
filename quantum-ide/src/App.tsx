@@ -6,7 +6,7 @@ import { CircuitEditor } from './components/CircuitEditor/CircuitEditor';
 import { CodeEditor } from './components/CodeEditor/CodeEditor';
 import { DebugPanel } from './components/DebugPanel/DebugPanel';
 import { ChatUI } from './components/ChatUI/ChatUI';
-import { QuantumGate } from './types/quantum';
+import { QuantumCircuit } from './types/quantum';
 import { simulateCircuit, parseCodeToCircuit, convertCircuitToCode } from './lib/simulator';
 import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import { QuantumError } from './lib/errors';
@@ -131,14 +131,14 @@ circuit.measure([0,1], [0,1])  # Measure both qubits`);
     ]);
   };
 
-  const handleCircuitSave = (gates: QuantumGate[]) => {
-    const circuit = {
+  const handleCircuitSave = (circuit: QuantumCircuit) => {
+    const gates = circuit.gates;
+    const newCode = convertCircuitToCode({
       gates,
-      qubits: Math.max(...gates.map(g => g.position.qubit)) + 1,
-      steps: Math.max(...gates.map(g => g.position.step)) + 1,
-      name: 'Circuit'
-    };
-    const newCode = convertCircuitToCode(circuit, 'python');
+      qubits: circuit.qubits,
+      steps: circuit.steps,
+      name: circuit.name
+    }, 'python');
     setCode(newCode);
   };
 

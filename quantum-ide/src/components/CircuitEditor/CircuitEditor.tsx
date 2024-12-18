@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { Button } from '../../components/ui/button';
 import { Card } from '../../components/ui/card';
 import { Plus, Minus, RotateCcw, Save } from 'lucide-react';
-import { QuantumGate } from '../../types/quantum';
+import { QuantumGate, QuantumCircuit } from '../../types/quantum';
 
 interface CircuitEditorProps {
-  onSave?: (circuit: QuantumGate[]) => void;
+  onSave?: (circuit: QuantumCircuit) => void;
 }
 
 export const CircuitEditor: React.FC<CircuitEditorProps> = ({ onSave }) => {
@@ -41,7 +41,13 @@ export const CircuitEditor: React.FC<CircuitEditorProps> = ({ onSave }) => {
 
   const handleSave = () => {
     if (onSave) {
-      onSave(gates);
+      const circuit: QuantumCircuit = {
+        gates,
+        qubits,
+        steps,
+        name: 'Circuit'
+      };
+      onSave(circuit);
     }
   };
 
