@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quantum-platform
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: quantum-platform
+  template:
+    metadata:
+      labels:
+        app: quantum-platform
+    spec:
+      containers:
+      - name: api
+        image: quantum-platform-api
+        ports:
+        - containerPort: 8000

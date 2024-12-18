@@ -1,0 +1,24 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "quantum-api"
+version = "0.1.0"
+description = "Quantum Development Platform API"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.5.3",
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    "python-multipart>=0.0.6",
+    "qiskit>=1.0.0",
+    "pyquil>=4.0.0",
+    "cirq>=1.2.0",
+    "qsharp>=0.28.302812"
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
