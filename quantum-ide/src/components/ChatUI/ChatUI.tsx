@@ -6,6 +6,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { useToast } from '../ui/use-toast';
 import { generateCircuit, createChatSession, addChatMessage } from '../../lib/api';
 import { QuantumCircuit } from '../../types/quantum';
+import { GitService } from '../../lib/gitService';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -15,9 +16,10 @@ interface Message {
 
 interface ChatUIProps {
     onCircuitGenerated?: (circuit: QuantumCircuit) => void;
+    currentRepository?: string;
 }
 
-export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
+export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated, currentRepository }) => {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -25,7 +27,6 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
     const { toast } = useToast();
 
     useEffect(() => {
-        // Create a new chat session when component mounts
         const initSession = async () => {
             try {
                 const session = await createChatSession();
@@ -42,12 +43,23 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
         initSession();
     }, []);
 
+    const handleGitCommand = async (command: string): Promise<string> => {
+        try {
+            const result = await GitService.executeCommand(command);
+            if (!result.success) {
+                throw new Error(result.error || 'Git command failed');
+            }
+            return result.message;
+        } catch (error) {
+            throw error;
+        }
+    };
+
     const handleSubmit = async () => {
         if (!input.trim() || !sessionId) return;
 
         try {
             setIsLoading(true);
-            // Add user message
             const userMessage: Message = {
                 role: 'user',
                 content: input,
@@ -56,44 +68,56 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
             setMessages(prev => [...prev, userMessage]);
             setInput('');
 
-            // Save message to session
             await addChatMessage(sessionId, {
                 role: userMessage.role,
                 content: userMessage.content
             });
 
-            // Generate circuit from prompt
-            const circuit = await generateCircuit(input);
+            const { command, isGitCommand } = await GitService.parseNaturalLanguage(input);
 
-            // Add assistant message
-            const assistantMessage: Message = {
-                role: 'assistant',
-                content: `Generated quantum circuit "${circuit.name}" with ${circuit.qubits} qubits and ${circuit.steps} steps.`,
-                timestamp: new Date()
-            };
-            setMessages(prev => [...prev, assistantMessage]);
-
-            // Save assistant message to session
-            await addChatMessage(sessionId, {
-                role: assistantMessage.role,
-                content: assistantMessage.content
-            });
-
-            // Notify parent component about the generated circuit
-            if (onCircuitGenerated) {
-                onCircuitGenerated(circuit);
+            if (isGitCommand && command) {
+                const gitResponse = await handleGitCommand(command);
+                const assistantMessage: Message = {
+                    role: 'assistant',
+                    content: gitResponse,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+                await addChatMessage(sessionId, {
+                    role: assistantMessage.role,
+                    content: assistantMessage.content
+                });
+                toast({
+                    title: 'Git Command Executed',
+                    description: 'Successfully executed Git command',
+                    variant: 'default'
+                });
+            } else {
+                const circuit = await generateCircuit(input);
+                const assistantMessage: Message = {
+                    role: 'assistant',
+                    content: `Generated quantum circuit "${circuit.name}" with ${circuit.qubits} qubits and ${circuit.steps} steps.`,
+                    timestamp: new Date()
+                };
+                setMessages(prev => [...prev, assistantMessage]);
+                await addChatMessage(sessionId, {
+                    role: assistantMessage.role,
+                    content: assistantMessage.content
+                });
+                if (onCircuitGenerated) {
+                    onCircuitGenerated(circuit);
+                }
+                toast({
+                    title: 'Circuit Generated',
+                    description: `Successfully created quantum circuit: ${circuit.name}`,
+                    variant: 'default'
+                });
             }
-
-            toast({
-                title: 'Circuit Generated',
-                description: `Successfully created quantum circuit: ${circuit.name}`,
-                variant: 'default'
-            });
         } catch (error) {
-            console.error('Error generating circuit:', error);
+            console.error('Error:', error);
             toast({
                 title: 'Error',
-                description: error instanceof Error ? error.message : 'Failed to generate quantum circuit',
+                description: error instanceof Error ? error.message : 'Operation failed',
                 variant: 'destructive'
             });
         } finally {
@@ -114,8 +138,8 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
                         <div
                             className={`rounded-lg px-4 py-2 max-w-[80%] ${
                                 message.role === 'user'
-                                    ? 'bg-primary text-primary-foreground ml-auto'
-                                    : 'bg-muted'
+                                    ? 'bg-purple-600 text-white'
+                                    : 'bg-gray-100 text-gray-900'
                             }`}
                         >
                             <p>{message.content}</p>
@@ -130,15 +154,16 @@ export const ChatUI: React.FC<ChatUIProps> = ({ onCircuitGenerated }) => {
                 <Input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder="Describe your quantum circuit..."
+                    placeholder={currentRepository ? "Enter Git command or describe quantum circuit..." : "Describe your quantum circuit..."}
                     onKeyPress={(e) => e.key === 'Enter' && handleSubmit()}
                     disabled={isLoading}
                 />
                 <Button
                     onClick={handleSubmit}
                     disabled={isLoading}
+                    className="bg-purple-600 hover:bg-purple-700 text-white"
                 >
-                    {isLoading ? 'Generating...' : 'Generate'}
+                    {isLoading ? 'Processing...' : 'Send'}
                 </Button>
             </div>
         </Card>
