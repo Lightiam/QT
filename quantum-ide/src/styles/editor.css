@@ -1,3 +1,28 @@
+/* Git status decorations */
+.modified-line-decoration {
+  background-color: rgba(255, 213, 0, 0.1);
+}
+
+.modified-line-gutter {
+  border-left: 2px solid #ffd500;
+}
+
+.added-line-decoration {
+  background-color: rgba(0, 255, 0, 0.1);
+}
+
+.added-line-gutter {
+  border-left: 2px solid #00ff00;
+}
+
+.deleted-line-decoration {
+  background-color: rgba(255, 0, 0, 0.1);
+}
+
+.deleted-line-gutter {
+  border-left: 2px solid #ff0000;
+}
+
 .breakpoint-decoration {
   background-color: rgba(255, 0, 0, 0.2);
 }
